@@ -1195,4 +1195,8 @@ Private Sub SubExportExcelsheet()
 
     wbFmBook.Activate
 
+    Set wsToSheet = Nothing
+    Set wbFmBook = Nothing
+    Set wbToBook = Nothing
+
 End Sub
