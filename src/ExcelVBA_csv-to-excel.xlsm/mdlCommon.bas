@@ -217,24 +217,24 @@ End Function
 '* 引数　　｜strClass：処理区分の名前
 '********************************************************************************
 Function FuncReadSetinfo(strClass As String) As String()
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     
     Select Case strClass
         Case mdlCommon.MAIN_PARA
-            arySetinfodata = Split(MAIN_RANGE, ",")
+            arySetinfo = Split(MAIN_RANGE, ",")
         Case mdlCommon.ERROR_PARA
-            arySetinfodata = Split(ERROR_RANGE, ",")
+            arySetinfo = Split(ERROR_RANGE, ",")
         Case mdlCommon.INPUT_PARA
-            arySetinfodata = Split(INPUT_RANGE, ",")
+            arySetinfo = Split(INPUT_RANGE, ",")
         Case mdlCommon.OUTPUT_PARA
-            arySetinfodata = Split(OUTPUT_RANGE, ",")
+            arySetinfo = Split(OUTPUT_RANGE, ",")
         Case mdlCommon.MASTER_PARA
-            arySetinfodata = Split(MASTER_RANGE, ",")
+            arySetinfo = Split(MASTER_RANGE, ",")
         Case mdlCommon.HIDDEN_PARA
-            arySetinfodata = Split(HIDDEN_RANGE, ",")
+            arySetinfo = Split(HIDDEN_RANGE, ",")
     End Select
     
-    FuncReadSetinfo = arySetinfodata
+    FuncReadSetinfo = arySetinfo
     
 End Function
 
@@ -716,17 +716,17 @@ Public Sub SubWriteError(lngCode As Long, Optional strAppend As String = "")
     End If
     strMessage = FuncRetrieveMessage(CStr(lngCode))
 
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strErrorsheet As String
     Dim strRange As String
     Dim rngTarget As Range
     Dim lngBeginrow As Long
     Dim lngBegincol As Long
     Dim lngEndrow As Long
-    arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.ERROR_PARA)
+    arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.ERROR_PARA)
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
-        strErrorsheet = .Range(arySetinfodata(0)).Value
-        strRange = .Range(arySetinfodata(1)).Value
+        strErrorsheet = .Range(arySetinfo(0)).Value
+        strRange = .Range(arySetinfo(1)).Value
     End With
 
     Set rngTarget = Range(strRange)

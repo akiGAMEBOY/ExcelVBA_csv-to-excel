@@ -38,16 +38,16 @@ Private Const PS6_LIKE As String = "*_PS6*"
 '********************************************************************************
 Private Sub btnBrowseInput_Click()
 On Error Resume Next
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim lngResult As Long
     Dim strMainsheet As String
     Dim strRange As String
     Dim strRootpath As String
     
-    arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+    arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
-        strMainsheet = .Range(arySetinfodata(0)).Value
-        strRange = .Range(arySetinfodata(2)).Value
+        strMainsheet = .Range(arySetinfo(0)).Value
+        strRange = .Range(arySetinfo(2)).Value
     End With
 
     With Application.FileDialog(msoFileDialogFolderPicker)
@@ -70,14 +70,14 @@ End Sub
 '********************************************************************************
 Private Sub btnBrowseOutput_Click()
 On Error Resume Next
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strMainsheet As String
     Dim strRange As String
     
-    arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+    arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
-        strMainsheet = .Range(arySetinfodata(0)).Value
-        strRange = .Range(arySetinfodata(7)).Value
+        strMainsheet = .Range(arySetinfo(0)).Value
+        strRange = .Range(arySetinfo(7)).Value
     End With
     
     Dim strPath As String
@@ -162,7 +162,7 @@ End Sub
 Private Function FuncCreateFolder() As String
     Dim strPath As String
 
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
 
     Dim strMainsheet As String
     Dim aryMainrange() As String
@@ -175,14 +175,14 @@ Private Function FuncCreateFolder() As String
     
     strRootfolder = ""
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
-        strMainsheet = .Range(arySetinfodata(0)).Value
-        aryMainrange(0) = .Range(arySetinfodata(2)).Value
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfo(0)).Value
+        aryMainrange(0) = .Range(arySetinfo(2)).Value
 
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
-        strRootfolder = .Range(arySetinfodata(0)).Value
-        If .Range(arySetinfodata(1)).Value <> "" Then
-            arySubfolder = Split(.Range(arySetinfodata(1)).Value, ",")
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        strRootfolder = .Range(arySetinfo(0)).Value
+        If .Range(arySetinfo(1)).Value <> "" Then
+            arySubfolder = Split(.Range(arySetinfo(1)).Value, ",")
         End If
     End With
     
@@ -214,7 +214,7 @@ On Error GoTo ERROR_LABEL
     Dim lngResult As Long
     lngResult = 0
     
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strMainsheet As String
     Dim strMainrange As String
     Dim strPath As String
@@ -226,9 +226,9 @@ On Error GoTo ERROR_LABEL
     Call mdlCommon.SubDisplayMessage(999)
     
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
-        strMainsheet = .Range(arySetinfodata(0)).Value
-        strMainrange = .Range(arySetinfodata(2)).Value
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfo(0)).Value
+        strMainrange = .Range(arySetinfo(2)).Value
         strPath = Worksheets(strMainsheet).Range(strMainrange).Value
     End With
 
@@ -365,7 +365,7 @@ End Function
 '* 引数　　｜lngExistsfile：ファイルの存在チェックしたフラグ
 '********************************************************************************
 Public Sub SubDisplayImportresult(lngExistsfile As Long)
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strMainsheet As String
     Dim aryExistsfile() As String
     Dim aryExistsdata() As String
@@ -374,22 +374,22 @@ Public Sub SubDisplayImportresult(lngExistsfile As Long)
 
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' メイン
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
-        strMainsheet = .Range(arySetinfodata(0)).Value
-        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
-            aryExistsfile = Split(.Range(arySetinfodata(3)).Value, ",")
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfo(0)).Value
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(3)).Value)) Then
+            aryExistsfile = Split(.Range(arySetinfo(3)).Value, ",")
         End If
-        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(4)).Value)) Then
-            aryExistsdata = Split(.Range(arySetinfodata(4)).Value, ",")
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(4)).Value)) Then
+            aryExistsdata = Split(.Range(arySetinfo(4)).Value, ",")
         End If
 
         ' 入力情報
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
         ReDim aryInputsheet(5)
-        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
-            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(3)).Value)) Then
+            aryInputsheet = Split(.Range(arySetinfo(3)).Value, ",")
         End If
-        strInputrange = .Range(arySetinfodata(4)).Value
+        strInputrange = .Range(arySetinfo(4)).Value
 
     End With
 
@@ -500,7 +500,7 @@ End Sub
 '* 引数　　｜strRootpath：対象ルートフォルダの絶対パス
 '********************************************************************************
 Private Sub SubImportPs(strRootpath As String)
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim lngCsvrow As Long
     Dim strInputrange As String
     Dim aryInputsheet() As String
@@ -508,13 +508,13 @@ Private Sub SubImportPs(strRootpath As String)
     Dim strPath As String
 
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
-        lngCsvrow = CLng(.Range(arySetinfodata(2)).Value)
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        lngCsvrow = CLng(.Range(arySetinfo(2)).Value)
         ReDim aryInputsheet(5)
-        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
-            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(3)).Value)) Then
+            aryInputsheet = Split(.Range(arySetinfo(3)).Value, ",")
         End If
-        strInputrange = .Range(arySetinfodata(4)).Value
+        strInputrange = .Range(arySetinfo(4)).Value
     End With
 
     ' シートの初期化
@@ -562,20 +562,20 @@ End Sub
 '* 引数　　｜-
 '********************************************************************************
 Private Function IsExistsImportdata() As Boolean
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim lngCsvrow As Long
     Dim strInputrange As String
     Dim aryInputsheet() As String
     Dim lngCount As Long
 
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
-        lngCsvrow = CLng(.Range(arySetinfodata(2)).Value)
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        lngCsvrow = CLng(.Range(arySetinfo(2)).Value)
         ReDim aryInputsheet(5)
-        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
-            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(3)).Value)) Then
+            aryInputsheet = Split(.Range(arySetinfo(3)).Value, ",")
         End If
-        strInputrange = .Range(arySetinfodata(4)).Value
+        strInputrange = .Range(arySetinfo(4)).Value
     End With
 
     For lngCount = 0 To UBound(aryInputsheet)
@@ -599,7 +599,7 @@ End Function
 '* 引数　　｜lngExistsfile：ファイルの存在チェックしたフラグ
 '********************************************************************************
 Private Sub SubCreateMaster(lngExistsfile As Long)
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim aryInputsheet() As String
     Dim strInputrange As String
     Dim objItem As Object
@@ -610,21 +610,21 @@ Private Sub SubCreateMaster(lngExistsfile As Long)
 
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' 入力情報
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
         ReDim aryInputsheet(5)
-        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
-            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(3)).Value)) Then
+            aryInputsheet = Split(.Range(arySetinfo(3)).Value, ",")
         End If
-        strInputrange = .Range(arySetinfodata(4)).Value
+        strInputrange = .Range(arySetinfo(4)).Value
 
         ' マスター
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
-        strMastersheet = .Range(arySetinfodata(0)).Value
-        strMasterrange = .Range(arySetinfodata(1)).Value
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
+        strMastersheet = .Range(arySetinfo(0)).Value
+        strMasterrange = .Range(arySetinfo(1)).Value
         ReDim aryCheckcol(0)
         aryCheckcol(0) = "1"
-        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(2)).Value)) Then
-            aryCheckcol = Split(.Range(arySetinfodata(2)).Value, ",")
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(2)).Value)) Then
+            aryCheckcol = Split(.Range(arySetinfo(2)).Value, ",")
         End If
     End With
 
@@ -769,7 +769,7 @@ On Error GoTo ERROR_LABEL
     Dim lngResult As Long
     lngResult = 0
 
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strMainsheet As String
     Dim aryMainrange() As String
 
@@ -781,11 +781,11 @@ On Error GoTo ERROR_LABEL
 
     ReDim aryMainrange(2)
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
-        strMainsheet = .Range(arySetinfodata(0)).Value
-        aryMainrange(0) = .Range(arySetinfodata(5)).Value
-        aryMainrange(1) = .Range(arySetinfodata(6)).Value
-        aryMainrange(2) = .Range(arySetinfodata(7)).Value
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfo(0)).Value
+        aryMainrange(0) = .Range(arySetinfo(5)).Value
+        aryMainrange(1) = .Range(arySetinfo(6)).Value
+        aryMainrange(2) = .Range(arySetinfo(7)).Value
     End With
 
     ' 未入力チェック
@@ -890,7 +890,7 @@ End Sub
 '* 引数　　｜-
 '********************************************************************************
 Private Function IsEmptyMaster() As Boolean
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strMainsheet As String
     Dim strMastersheet As String
     Dim strMasterrange As String
@@ -898,13 +898,13 @@ Private Function IsEmptyMaster() As Boolean
 
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' マスター
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
-        strMastersheet = .Range(arySetinfodata(0)).Value
-        strMasterrange = .Range(arySetinfodata(1)).Value
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
+        strMastersheet = .Range(arySetinfo(0)).Value
+        strMasterrange = .Range(arySetinfo(1)).Value
         ReDim aryCheckcol(0)
         aryCheckcol(0) = "1"
-        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(2)).Value)) Then
-            aryCheckcol = Split(.Range(arySetinfodata(2)).Value, ",")
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(2)).Value)) Then
+            aryCheckcol = Split(.Range(arySetinfo(2)).Value, ",")
         End If
     End With
 
@@ -921,18 +921,18 @@ End Function
 '* 引数　　｜-
 '********************************************************************************
 Private Sub SubClearOutputsheet()
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim aryOutputsheet() As String
     Dim strOutputrange As String
     Dim lngCount As Long
 
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' 出力情報
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
-        If .Range(arySetinfodata(0)).Value <> "" Then
-            aryOutputsheet = Split(.Range(arySetinfodata(0)).Value, ",")
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
+        If .Range(arySetinfo(0)).Value <> "" Then
+            aryOutputsheet = Split(.Range(arySetinfo(0)).Value, ",")
         End If
-        strOutputrange = .Range(arySetinfodata(1)).Value
+        strOutputrange = .Range(arySetinfo(1)).Value
     End With
 
     For lngCount = 0 To UBound(aryOutputsheet)
@@ -949,7 +949,7 @@ End Sub
 '* 引数　　｜-
 '********************************************************************************
 Private Sub SubToExcelsheet()
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim aryInputsheet() As String
     Dim strInputrange As String
     Dim aryOutputsheet() As String
@@ -958,18 +958,18 @@ Private Sub SubToExcelsheet()
 
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' 入力情報
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
-        If .Range(arySetinfodata(3)).Value <> "" Then
-            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        If .Range(arySetinfo(3)).Value <> "" Then
+            aryInputsheet = Split(.Range(arySetinfo(3)).Value, ",")
         End If
-        strInputrange = .Range(arySetinfodata(4)).Value
+        strInputrange = .Range(arySetinfo(4)).Value
 
         ' 出力情報
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
-        If .Range(arySetinfodata(0)).Value <> "" Then
-            aryOutputsheet = Split(.Range(arySetinfodata(0)).Value, ",")
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
+        If .Range(arySetinfo(0)).Value <> "" Then
+            aryOutputsheet = Split(.Range(arySetinfo(0)).Value, ",")
         End If
-        strOutputrange = .Range(arySetinfodata(1)).Value
+        strOutputrange = .Range(arySetinfo(1)).Value
     End With
 
     For lngCount = 0 To UBound(aryInputsheet)
@@ -992,18 +992,18 @@ End Sub
 '********************************************************************************
 Private Sub SubToPs(strInputsheet, strInputrange, strOutputsheet, strOutputrange)
 
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strMainsheet As String
     Dim aryMainrange() As String
 
     ReDim aryMainrange(2)
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' メイン
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
-        strMainsheet = .Range(arySetinfodata(0)).Value
-        aryMainrange(0) = .Range(arySetinfodata(5)).Value
-        aryMainrange(1) = .Range(arySetinfodata(6)).Value
-        aryMainrange(2) = .Range(arySetinfodata(7)).Value
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfo(0)).Value
+        aryMainrange(0) = .Range(arySetinfo(5)).Value
+        aryMainrange(1) = .Range(arySetinfo(6)).Value
+        aryMainrange(2) = .Range(arySetinfo(7)).Value
     End With
 
     Dim aryInputdata() As String
@@ -1082,15 +1082,15 @@ End Sub
 '* 引数　　｜対象群番号：strDistributor, 対象性別：strDeveloper
 '********************************************************************************
 Private Function FuncRetrieveStar(strDistributor As String, strDeveloper As String) As String
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strMastersheet As String
     Dim strMasterrange As String
 
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' マスター
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
-        strMastersheet = .Range(arySetinfodata(0)).Value
-        strMasterrange = .Range(arySetinfodata(1)).Value
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
+        strMastersheet = .Range(arySetinfo(0)).Value
+        strMasterrange = .Range(arySetinfo(1)).Value
     End With
 
     Dim rngTarget As Range
@@ -1127,24 +1127,24 @@ End Function
 '* 引数　　｜-
 '********************************************************************************
 Private Sub SubExportExcelsheet()
-    Dim arySetinfodata() As String
+    Dim arySetinfo() As String
     Dim strMainsheet As String
     Dim strRange As String
     Dim aryOutputsheet() As String
     Dim strOutputrange As String
 
-    arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+    arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' メイン
-        strMainsheet = .Range(arySetinfodata(0)).Value
-        strRange = .Range(arySetinfodata(7)).Value
+        strMainsheet = .Range(arySetinfo(0)).Value
+        strRange = .Range(arySetinfo(7)).Value
 
         ' 出力情報
-        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
-        If .Range(arySetinfodata(0)).Value <> "" Then
-            aryOutputsheet = Split(.Range(arySetinfodata(0)).Value, ",")
+        arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
+        If .Range(arySetinfo(0)).Value <> "" Then
+            aryOutputsheet = Split(.Range(arySetinfo(0)).Value, ",")
         End If
-        strOutputrange = .Range(arySetinfodata(1)).Value
+        strOutputrange = .Range(arySetinfo(1)).Value
     End With
 
     Dim strPath As String
