@@ -181,7 +181,7 @@ Private Function FuncCreateFolder() As String
 
         arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
         strRootfolder = .Range(arySetinfo(0)).Value
-        If .Range(arySetinfo(1)).Value <> "" Then
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(1)).Value)) Then
             arySubfolder = Split(.Range(arySetinfo(1)).Value, ",")
         End If
     End With
@@ -261,7 +261,7 @@ On Error GoTo ERROR_LABEL
 
     ' インポート（CSVファイル to Excelシート）
     If lngResult = 0 Then
-        Call SubImportPs(strPath)
+        Call SubImportCsv(strPath)
     End If
 
     ' 入力データの0件チェック
@@ -493,13 +493,13 @@ Private Sub SubWriteImportresult(strMainsheet As String, strRange As String, blV
 End Sub
 
 '********************************************************************************
-'* 処理名　｜SubImportPs
+'* 処理名　｜SubImportCsv
 '* 機能　　｜データのインポート
 '*-------------------------------------------------------------------------------
 '* 戻り値　｜-
 '* 引数　　｜strRootpath：対象ルートフォルダの絶対パス
 '********************************************************************************
-Private Sub SubImportPs(strRootpath As String)
+Private Sub SubImportCsv(strRootpath As String)
     Dim arySetinfo() As String
     Dim lngCsvrow As Long
     Dim strInputrange As String
@@ -929,7 +929,7 @@ Private Sub SubClearOutputsheet()
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' 出力情報
         arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
-        If .Range(arySetinfo(0)).Value <> "" Then
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(0)).Value)) Then
             aryOutputsheet = Split(.Range(arySetinfo(0)).Value, ",")
         End If
         strOutputrange = .Range(arySetinfo(1)).Value
@@ -959,14 +959,14 @@ Private Sub SubToExcelsheet()
     With Worksheets(mdlCommon.SETINFO_SHEETNAME)
         ' 入力情報
         arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
-        If .Range(arySetinfo(3)).Value <> "" Then
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(3)).Value)) Then
             aryInputsheet = Split(.Range(arySetinfo(3)).Value, ",")
         End If
         strInputrange = .Range(arySetinfo(4)).Value
 
         ' 出力情報
         arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
-        If .Range(arySetinfo(0)).Value <> "" Then
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(0)).Value)) Then
             aryOutputsheet = Split(.Range(arySetinfo(0)).Value, ",")
         End If
         strOutputrange = .Range(arySetinfo(1)).Value
@@ -1141,7 +1141,7 @@ Private Sub SubExportExcelsheet()
 
         ' 出力情報
         arySetinfo = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
-        If .Range(arySetinfo(0)).Value <> "" Then
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfo(0)).Value)) Then
             aryOutputsheet = Split(.Range(arySetinfo(0)).Value, ",")
         End If
         strOutputrange = .Range(arySetinfo(1)).Value
