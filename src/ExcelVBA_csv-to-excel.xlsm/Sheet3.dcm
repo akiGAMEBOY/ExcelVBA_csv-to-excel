@@ -1,0 +1,1198 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "Sheet3"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Option Explicit
+
+' 定数
+'   PS1 : 01=000001
+Private Const PS1_FLAG As Long = 1
+Private Const PS1_LIKE As String = "*_PS1*"
+'   PS2 : 02=000010
+Private Const PS2_FLAG As Long = 2
+Private Const PS2_LIKE As String = "*_PS2*"
+'   PS3 : 04=000100
+Private Const PS3_FLAG As Long = 4
+Private Const PS3_LIKE As String = "*_PS3*"
+'   PS4 : 08=001000
+Private Const PS4_FLAG As Long = 8
+Private Const PS4_LIKE As String = "*_PS4*"
+'   PS5 : 16=010000
+Private Const PS5_FLAG As Long = 16
+Private Const PS5_LIKE As String = "*_PS5*"
+'   PS6 : 32=100000
+Private Const PS6_FLAG As Long = 32
+Private Const PS6_LIKE As String = "*_PS6*"
+
+'********************************************************************************
+'* 処理名　｜btnBrowseInput_Click
+'* 機能　　｜入力ファイル参照ボタン
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Sub btnBrowseInput_Click()
+On Error Resume Next
+    Dim arySetinfodata() As String
+    Dim lngResult As Long
+    Dim strMainsheet As String
+    Dim strRange As String
+    Dim strRootpath As String
+    
+    arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        strMainsheet = .Range(arySetinfodata(0)).Value
+        strRange = .Range(arySetinfodata(2)).Value
+    End With
+
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        If .Show = True Then
+            ' 選択した値を反映
+            strRootpath = .SelectedItems(1)
+            Worksheets(strMainsheet).Range(strRange).Value = strRootpath
+            ChDrive .SelectedItems(1)
+            ChDir .SelectedItems(1)
+        End If
+    End With
+End Sub
+
+'********************************************************************************
+'* 処理名　｜btnBrowseOutput_Click
+'* 機能　　｜出力ファイル参照ボタン
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Sub btnBrowseOutput_Click()
+On Error Resume Next
+    Dim arySetinfodata() As String
+    Dim strMainsheet As String
+    Dim strRange As String
+    
+    arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        strMainsheet = .Range(arySetinfodata(0)).Value
+        strRange = .Range(arySetinfodata(7)).Value
+    End With
+    
+    Dim strPath As String
+    Dim lngPos As Long
+    
+    strPath = Application.GetSaveAsFilename(FileFilter:=mdlCommon.EXCEL_FILETYPE, _
+                                            FilterIndex:=2)
+    
+    If strPath = "False" Then
+        Exit Sub
+    End If
+    
+    Worksheets(strMainsheet).Range(strRange).Value = strPath
+    lngPos = InStrRev(strPath, "\")
+    strPath = Left(strPath, lngPos)
+    ChDrive strPath
+    ChDir strPath
+End Sub
+
+'********************************************************************************
+'* 処理名　｜btnCreateFolder_Click
+'* 機能　　｜フォルダ作成ボタン
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Sub btnCreateFolder_Click()
+Application.EnableCancelKey = xlErrorHandler
+On Error GoTo ERROR_LABEL
+    Dim lngResult As Long
+    lngResult = 0
+    Dim strPath As String
+    
+    ' 事前処理
+    Call mdlCommon.SubOnSpeedup(True)
+    Call mdlCommon.SubDisplayStatusbar(True)
+    Call mdlCommon.SubVisibleSheet(mdlCommon.HIDDEN_PARA, True)
+    Call mdlCommon.SubDisplayMessage(999)
+    
+    ' フォルダ作成
+    strPath = FuncCreateFolder()
+    
+    ' 事後処理
+    Call mdlCommon.SubDisplayMessage(20, strPath)
+    Call mdlCommon.SubVisibleSheet(mdlCommon.HIDDEN_PARA, False)
+    Call mdlCommon.SubDisplayStatusbar(False)
+    Call mdlCommon.SubOnSpeedup(False)
+    
+    Exit Sub
+    
+ERROR_LABEL:
+    ' 例外エラー
+    lngResult = -999
+    Select Case Err.Number
+        Case 18
+            lngResult = -901
+            If Not (mdlCommon.FuncShowBreakmessage) Then
+                lngResult = 0
+                Resume
+            End If
+    End Select
+
+    Call mdlCommon.SubVisibleSheet("HIDDEN", False)
+    Call mdlCommon.SubDisplayStatusbar(False)
+    Call mdlCommon.SubOnSpeedup(False)
+
+    Call mdlCommon.SubDisplayMessage(lngResult)
+    Call mdlCommon.SubWriteError(lngResult)
+    Call mdlCommon.SubShowMessagebox(lngResult)
+    
+    Exit Sub
+    
+End Sub
+
+'********************************************************************************
+'* 処理名　｜FuncCreateFolder
+'* 機能　　｜フォルダ作成処理
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜String=作成したフォルダの絶対パス
+'* 引数　　｜-
+'********************************************************************************
+Private Function FuncCreateFolder() As String
+    Dim strPath As String
+
+    Dim arySetinfodata() As String
+
+    Dim strMainsheet As String
+    Dim aryMainrange() As String
+    Dim strRootfolder As String
+    Dim arySubfolder() As String
+    Dim strCreatepath As String
+    Dim lngCount As Long
+    ReDim aryMainrange(0)
+    ReDim arySubfolder(0)
+    
+    strRootfolder = ""
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfodata(0)).Value
+        aryMainrange(0) = .Range(arySetinfodata(2)).Value
+
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        strRootfolder = .Range(arySetinfodata(0)).Value
+        If .Range(arySetinfodata(1)).Value <> "" Then
+            arySubfolder = Split(.Range(arySetinfodata(1)).Value, ",")
+        End If
+    End With
+    
+    strPath = ThisWorkbook.Path
+    strPath = strPath & "\" & strRootfolder
+    If Not (mdlCommon.IsExistsFolder(strPath)) Then
+        MkDir strPath
+    End If
+
+    ChDir strPath
+    With Worksheets(strMainsheet)
+        .Range(aryMainrange(0)).Value = strPath
+    End With
+    
+    FuncCreateFolder = strPath
+    
+End Function
+
+'********************************************************************************
+'* 処理名　｜btnImport_Click
+'* 機能　　｜インポートボタン
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Sub btnImport_Click()
+Application.EnableCancelKey = xlErrorHandler
+On Error GoTo ERROR_LABEL
+    Dim lngResult As Long
+    lngResult = 0
+    
+    Dim arySetinfodata() As String
+    Dim strMainsheet As String
+    Dim strMainrange As String
+    Dim strPath As String
+
+    ' 事前処理
+    Call mdlCommon.SubOnSpeedup(True)
+    Call mdlCommon.SubDisplayStatusbar(True)
+    Call mdlCommon.SubVisibleSheet(mdlCommon.HIDDEN_PARA, True)
+    Call mdlCommon.SubDisplayMessage(999)
+    
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfodata(0)).Value
+        strMainrange = .Range(arySetinfodata(2)).Value
+        strPath = Worksheets(strMainsheet).Range(strMainrange).Value
+    End With
+
+    ' 表に反映
+    Dim lngExistsfile As Long
+    lngExistsfile = 0
+    Call SubDisplayImportresult(lngExistsfile)
+
+    ' 未入力チェック
+    If mdlCommon.IsEmptyText(strPath) Then
+        Call mdlCommon.SubSelectCell(strMainsheet, strMainrange)
+        lngResult = -111
+    End If
+    
+    ' 存在チェック
+    If lngResult = 0 Then
+        If Not (mdlCommon.IsExistsFolder(strPath)) Then
+            Call mdlCommon.SubSelectCell(strMainsheet, strMainrange)
+            lngResult = -212
+        End If
+    End If
+    
+    ' データチェック
+    If lngResult = 0 Then
+        lngExistsfile = FuncExistsFile(strPath)
+        If lngExistsfile = 0 Then
+            lngResult = -111
+        End If
+    End If
+
+    ' インポート（CSVファイル to Excelシート）
+    If lngResult = 0 Then
+        Call SubImportPs(strPath)
+    End If
+
+    ' 入力データの0件チェック
+    If lngResult = 0 Then
+        If Not (IsExistsImportdata) Then
+            lngResult = -311
+        End If
+    End If
+
+    ' 表に反映
+    Call SubDisplayImportresult(lngExistsfile)
+
+    ' マスターシートの作成
+    If lngResult = 0 Then
+        Call SubCreateMaster(lngExistsfile)
+    End If
+    
+    ' 事後処理
+    Worksheets(strMainsheet).Select
+
+    Call mdlCommon.SubVisibleSheet(mdlCommon.HIDDEN_PARA, False)
+    Call mdlCommon.SubDisplayStatusbar(False)
+    Call mdlCommon.SubOnSpeedup(False)
+    If lngResult = 0 Then
+        Call mdlCommon.SubDisplayMessage(lngResult)
+        Call mdlCommon.SubSelectCell(strMainsheet, "A1")
+    Else
+        Call mdlCommon.SubDisplayMessage(lngResult)
+        Call mdlCommon.SubWriteError(lngResult)
+        Call mdlCommon.SubShowMessagebox(lngResult)
+    End If
+    
+    Exit Sub
+    
+ERROR_LABEL:
+    ' 例外エラー
+    lngResult = -999
+    Select Case Err.Number
+        Case 18
+            lngResult = -901
+            If Not (mdlCommon.FuncShowBreakmessage) Then
+                lngResult = 0
+                Resume
+            End If
+    End Select
+
+    Call mdlCommon.SubVisibleSheet("HIDDEN", False)
+    Call mdlCommon.SubDisplayStatusbar(False)
+    Call mdlCommon.SubOnSpeedup(False)
+
+    Call mdlCommon.SubDisplayMessage(lngResult)
+    Call mdlCommon.SubWriteError(lngResult)
+    Call mdlCommon.SubShowMessagebox(lngResult)
+    
+    Exit Sub
+End Sub
+
+'********************************************************************************
+'* 処理名　｜FuncExistsFile
+'* 機能　　｜対象ファイル名すべての存在チェック
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜Long：ファイルの存在チェックしたフラグ
+'* 引数　　｜strRootpath：対象ルートフォルダの絶対パス
+'********************************************************************************
+Private Function FuncExistsFile(strRootpath As String) As Long
+    ' フラグ
+    Dim lngExistsfile As Long
+    Dim objItem As Object
+    
+    lngExistsfile = 0
+
+    With CreateObject("Scripting.FileSystemObject")
+        For Each objItem In .GetFolder(strRootpath).Files
+            If LCase(.GetExtensionName(objItem)) = "csv" Then
+                If objItem.Name Like PS1_LIKE Then
+                    lngExistsfile = lngExistsfile Or PS1_FLAG
+                ElseIf objItem.Name Like PS2_LIKE Then
+                    lngExistsfile = lngExistsfile Or PS2_FLAG
+                ElseIf objItem.Name Like PS3_LIKE Then
+                    lngExistsfile = lngExistsfile Or PS3_FLAG
+                ElseIf objItem.Name Like PS4_LIKE Then
+                    lngExistsfile = lngExistsfile Or PS4_FLAG
+                ElseIf objItem.Name Like PS5_LIKE Then
+                    lngExistsfile = lngExistsfile Or PS5_FLAG
+                ElseIf objItem.Name Like PS6_LIKE Then
+                    lngExistsfile = lngExistsfile Or PS6_FLAG
+                End If
+            End If
+        Next
+    End With
+    
+    FuncExistsFile = lngExistsfile
+
+End Function
+
+'********************************************************************************
+'* 処理名　｜SubDisplayImportresult
+'* 機能　　｜インポート結果を表示
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜lngExistsfile：ファイルの存在チェックしたフラグ
+'********************************************************************************
+Public Sub SubDisplayImportresult(lngExistsfile As Long)
+    Dim arySetinfodata() As String
+    Dim strMainsheet As String
+    Dim aryExistsfile() As String
+    Dim aryExistsdata() As String
+    Dim aryInputsheet() As String
+    Dim strInputrange As String
+
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        ' メイン
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfodata(0)).Value
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
+            aryExistsfile = Split(.Range(arySetinfodata(3)).Value, ",")
+        End If
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(4)).Value)) Then
+            aryExistsdata = Split(.Range(arySetinfodata(4)).Value, ",")
+        End If
+
+        ' 入力情報
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        ReDim aryInputsheet(5)
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
+            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        End If
+        strInputrange = .Range(arySetinfodata(4)).Value
+
+    End With
+
+    If (lngExistsfile And PS1_FLAG) <> 0 Then
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(0), True)
+        If Not (mdlCommon.IsEmptyText( _
+                Worksheets(aryInputsheet(0)).Range(strInputrange).Value)) Then
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(0), True)
+        Else
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(0), False)
+        End If
+    Else
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(0), False)
+        Call SubWriteImportresult(strMainsheet, aryExistsdata(0), False)
+    End If
+    If (lngExistsfile And PS2_FLAG) <> 0 Then
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(1), True)
+        If Not (mdlCommon.IsEmptyText( _
+                Worksheets(aryInputsheet(1)).Range(strInputrange).Value)) Then
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(1), True)
+        Else
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(1), False)
+        End If
+    Else
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(1), False)
+        Call SubWriteImportresult(strMainsheet, aryExistsdata(1), False)
+    End If
+    If (lngExistsfile And PS3_FLAG) <> 0 Then
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(2), True)
+        If Not (mdlCommon.IsEmptyText( _
+                Worksheets(aryInputsheet(2)).Range(strInputrange).Value)) Then
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(2), True)
+        Else
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(2), False)
+        End If
+    Else
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(2), False)
+        Call SubWriteImportresult(strMainsheet, aryExistsdata(2), False)
+    End If
+    If (lngExistsfile And PS4_FLAG) <> 0 Then
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(3), True)
+        If Not (mdlCommon.IsEmptyText( _
+                Worksheets(aryInputsheet(3)).Range(strInputrange).Value)) Then
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(3), True)
+        Else
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(3), False)
+        End If
+    Else
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(3), False)
+        Call SubWriteImportresult(strMainsheet, aryExistsdata(3), False)
+    End If
+    If (lngExistsfile And PS5_FLAG) <> 0 Then
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(4), True)
+        If Not (mdlCommon.IsEmptyText( _
+                Worksheets(aryInputsheet(4)).Range(strInputrange).Value)) Then
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(4), True)
+        Else
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(4), False)
+        End If
+    Else
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(4), False)
+        Call SubWriteImportresult(strMainsheet, aryExistsdata(4), False)
+    End If
+    If (lngExistsfile And PS6_FLAG) <> 0 Then
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(5), True)
+        If Not (mdlCommon.IsEmptyText( _
+                Worksheets(aryInputsheet(5)).Range(strInputrange).Value)) Then
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(5), True)
+        Else
+            Call SubWriteImportresult(strMainsheet, aryExistsdata(5), False)
+        End If
+    Else
+        Call SubWriteImportresult(strMainsheet, aryExistsfile(5), False)
+        Call SubWriteImportresult(strMainsheet, aryExistsdata(5), False)
+    End If
+
+End Sub
+
+'********************************************************************************
+'* 処理名　｜SubWriteImportresult
+'* 機能　　｜インポート結果を書き込み
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜strMainsheet：対象シート, strMainsheet：対象セル位置：strRange, blValid：データ有無
+'********************************************************************************
+Private Sub SubWriteImportresult(strMainsheet As String, strRange As String, blValid As Boolean)
+    Dim strYesExists As String
+    Dim strNoExists As String
+    strYesExists = "○"
+    strNoExists = "×"
+    With Worksheets(strMainsheet)
+        If blValid Then
+            .Range(strRange).Font.ColorIndex = 10
+            .Range(strRange).Value = strYesExists
+        Else
+            .Range(strRange).Font.ColorIndex = 1
+            .Range(strRange).Value = strNoExists
+        End If
+    End With
+
+End Sub
+
+'********************************************************************************
+'* 処理名　｜SubImportPs
+'* 機能　　｜データのインポート
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜strRootpath：対象ルートフォルダの絶対パス
+'********************************************************************************
+Private Sub SubImportPs(strRootpath As String)
+    Dim arySetinfodata() As String
+    Dim lngCsvrow As Long
+    Dim strInputrange As String
+    Dim aryInputsheet() As String
+    Dim objItem As Object
+    Dim strPath As String
+
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        lngCsvrow = CLng(.Range(arySetinfodata(2)).Value)
+        ReDim aryInputsheet(5)
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
+            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        End If
+        strInputrange = .Range(arySetinfodata(4)).Value
+    End With
+
+    ' シートの初期化
+    Call mdlCommon.SubClearSheet(aryInputsheet(0), strInputrange)
+    Call mdlCommon.SubClearSheet(aryInputsheet(1), strInputrange)
+    Call mdlCommon.SubClearSheet(aryInputsheet(2), strInputrange)
+    Call mdlCommon.SubClearSheet(aryInputsheet(3), strInputrange)
+    Call mdlCommon.SubClearSheet(aryInputsheet(4), strInputrange)
+    Call mdlCommon.SubClearSheet(aryInputsheet(5), strInputrange)
+
+    ' データインポート
+    With CreateObject("Scripting.FileSystemObject")
+        For Each objItem In .GetFolder(strRootpath).Files
+            If LCase(.GetExtensionName(objItem)) = "csv" Then
+                If objItem.Name Like PS1_LIKE Then
+                    strPath = strRootpath & "\" & objItem.Name
+                    Call mdlCommon.SubLoadCsv(strPath, lngCsvrow, aryInputsheet(0), strInputrange)
+                ElseIf objItem.Name Like PS2_LIKE Then
+                    strPath = strRootpath & "\" & objItem.Name
+                    Call mdlCommon.SubLoadCsv(strPath, lngCsvrow, aryInputsheet(1), strInputrange)
+                ElseIf objItem.Name Like PS3_LIKE Then
+                    strPath = strRootpath & "\" & objItem.Name
+                    Call mdlCommon.SubLoadCsv(strPath, lngCsvrow, aryInputsheet(2), strInputrange)
+                ElseIf objItem.Name Like PS4_LIKE Then
+                    strPath = strRootpath & "\" & objItem.Name
+                    Call mdlCommon.SubLoadCsv(strPath, lngCsvrow, aryInputsheet(3), strInputrange)
+                ElseIf objItem.Name Like PS5_LIKE Then
+                    strPath = strRootpath & "\" & objItem.Name
+                    Call mdlCommon.SubLoadCsv(strPath, lngCsvrow, aryInputsheet(4), strInputrange)
+                ElseIf objItem.Name Like PS6_LIKE Then
+                    strPath = strRootpath & "\" & objItem.Name
+                    Call mdlCommon.SubLoadCsv(strPath, lngCsvrow, aryInputsheet(5), strInputrange)
+                End If
+            End If
+        Next
+    End With
+
+End Sub
+
+'********************************************************************************
+'* 処理名　｜IsExistsImportdata
+'* 機能　　｜取り込みデータの存在チェック
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜Boolean（True：存在する, Flase：存在しない）
+'* 引数　　｜-
+'********************************************************************************
+Private Function IsExistsImportdata() As Boolean
+    Dim arySetinfodata() As String
+    Dim lngCsvrow As Long
+    Dim strInputrange As String
+    Dim aryInputsheet() As String
+    Dim lngCount As Long
+
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        lngCsvrow = CLng(.Range(arySetinfodata(2)).Value)
+        ReDim aryInputsheet(5)
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
+            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        End If
+        strInputrange = .Range(arySetinfodata(4)).Value
+    End With
+
+    For lngCount = 0 To UBound(aryInputsheet)
+        With Worksheets(aryInputsheet(lngCount))
+            If Not (mdlCommon.IsEmptyText(.Range(strInputrange).Value)) Then
+                IsExistsImportdata = True
+                Exit Function
+            End If
+        End With
+    Next
+
+    IsExistsImportdata = False
+
+End Function
+
+'********************************************************************************
+'* 処理名　｜SubCreateMaster
+'* 機能　　｜マスターシート作成
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜lngExistsfile：ファイルの存在チェックしたフラグ
+'********************************************************************************
+Private Sub SubCreateMaster(lngExistsfile As Long)
+    Dim arySetinfodata() As String
+    Dim aryInputsheet() As String
+    Dim strInputrange As String
+    Dim objItem As Object
+    Dim strPath As String
+    Dim strMastersheet As String
+    Dim strMasterrange As String
+    Dim aryCheckcol() As String
+
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        ' 入力情報
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        ReDim aryInputsheet(5)
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(3)).Value)) Then
+            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        End If
+        strInputrange = .Range(arySetinfodata(4)).Value
+
+        ' マスター
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
+        strMastersheet = .Range(arySetinfodata(0)).Value
+        strMasterrange = .Range(arySetinfodata(1)).Value
+        ReDim aryCheckcol(0)
+        aryCheckcol(0) = "1"
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(2)).Value)) Then
+            aryCheckcol = Split(.Range(arySetinfodata(2)).Value, ",")
+        End If
+    End With
+
+    ' 初期化
+    Call mdlCommon.SubClearSheet(strMastersheet, strMasterrange)
+
+    ' ファイルあり＆データありの場合, マスターを作成
+    If (lngExistsfile And PS1_FLAG) <> 0 Then
+        With Worksheets(aryInputsheet(0))
+            If Not (mdlCommon.IsEmptyText(.Range(strInputrange).Value)) Then
+                Call SubCreateStar(aryInputsheet(0), strInputrange, strMastersheet, strMasterrange)
+            End If
+        End With
+    ElseIf (lngExistsfile And PS2_FLAG) <> 0 Then
+        With Worksheets(aryInputsheet(1))
+            If Not (mdlCommon.IsEmptyText(.Range(strInputrange).Value)) Then
+                Call SubCreateStar(aryInputsheet(1), strInputrange, strMastersheet, strMasterrange)
+            End If
+        End With
+    ElseIf (lngExistsfile And PS3_FLAG) <> 0 Then
+        With Worksheets(aryInputsheet(2))
+            If Not (mdlCommon.IsEmptyText(.Range(strInputrange).Value)) Then
+                Call SubCreateStar(aryInputsheet(2), strInputrange, strMastersheet, strMasterrange)
+            End If
+        End With
+    ElseIf (lngExistsfile And PS4_FLAG) <> 0 Then
+        With Worksheets(aryInputsheet(3))
+            If Not (mdlCommon.IsEmptyText(.Range(strInputrange).Value)) Then
+                Call SubCreateStar(aryInputsheet(3), strInputrange, strMastersheet, strMasterrange)
+            End If
+        End With
+    ElseIf (lngExistsfile And PS5_FLAG) <> 0 Then
+        With Worksheets(aryInputsheet(4))
+            If Not (mdlCommon.IsEmptyText(.Range(strInputrange).Value)) Then
+                Call SubCreateStar(aryInputsheet(4), strInputrange, strMastersheet, strMasterrange)
+            End If
+        End With
+    ElseIf (lngExistsfile And PS6_FLAG) <> 0 Then
+        With Worksheets(aryInputsheet(5))
+            If Not (mdlCommon.IsEmptyText(.Range(strInputrange).Value)) Then
+                Call SubCreateStar(aryInputsheet(5), strInputrange, strMastersheet, strMasterrange)
+            End If
+        End With
+    End If
+
+End Sub
+
+'********************************************************************************
+'* 処理名　｜SubCreateStar
+'* 機能　　｜Starの作成
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜入力 対象シート名：strInputsheet, 入力 セル開始位置：strInputrange
+'* 引数　　｜マスター 対象シート名：strMastersheet, マスター セル開始位置：strMasterrange
+'********************************************************************************
+Private Sub SubCreateStar(strInputsheet As String, strInputrange As String, _
+                          strMastersheet As String, strMasterrange As String)
+    Dim rngInput As Range
+    Dim lngInputbeginrow As Long
+    Dim lngInputbegincol As Long
+    Dim lngEndrow As Long
+    Dim lngEndcol As Long
+    Set rngInput = Range(strInputrange)
+    lngInputbeginrow = rngInput.Row
+    lngInputbegincol = rngInput.Column
+    With Worksheets(strInputsheet)
+        lngEndrow = .Cells(Rows.Count, lngInputbegincol).End(xlUp).Row
+        lngEndcol = .Cells(lngInputbeginrow - 1, Columns.Count).End(xlToLeft).Column
+    End With
+
+    ' 集計
+    Dim strSummarykey() As String
+    Dim strBeforekey() As String
+    Dim lngSummaryrow As Long
+    ReDim strSummarykey(2)
+    ReDim strBeforekey(2)
+
+    Dim rngMaster As Range
+    Dim lngMasterbeginrow As Long
+    Dim lngMasterbegincol As Long
+    Set rngMaster = Range(strMasterrange)
+    lngMasterbeginrow = rngMaster.Row
+    lngMasterbegincol = rngMaster.Column
+
+    Dim lngRow As Long
+    lngSummaryrow = lngMasterbeginrow
+    For lngRow = lngInputbeginrow To lngEndrow
+        With Worksheets(strInputsheet)
+            strSummarykey(0) = .Cells(lngRow, lngInputbegincol).Value
+            strSummarykey(1) = .Cells(lngRow, lngInputbegincol + 3).Value
+            strSummarykey(2) = .Cells(lngRow, lngInputbegincol + 4).Value
+            ' キーチェック
+            If strSummarykey(0) <> strBeforekey(0) Or _
+               strSummarykey(1) <> strBeforekey(1) Or _
+               strSummarykey(2) <> strBeforekey(2) Then
+                With Worksheets(strMastersheet)
+                    .Cells(lngSummaryrow, lngMasterbegincol).Value = strSummarykey(0)
+                    .Cells(lngSummaryrow, lngMasterbegincol + 1).Value = strSummarykey(1)
+                    .Cells(lngSummaryrow, lngMasterbegincol + 2).Value = strSummarykey(2)
+                    strBeforekey = strSummarykey
+                    lngSummaryrow = lngSummaryrow + 1
+                End With
+            End If
+        End With
+    Next
+    ' 罫線の設定
+    With Worksheets(strMastersheet)
+        lngEndrow = .Cells(Rows.Count, lngMasterbegincol).End(xlUp).Row
+        lngEndcol = .Cells(lngMasterbeginrow - 1, Columns.Count).End(xlToLeft).Column
+        ' Dataid
+        With .Range(.Cells(lngMasterbeginrow, lngMasterbegincol), .Cells(lngEndrow, lngMasterbegincol))
+            .Interior.ColorIndex = 15
+        End With
+        ' Distributor
+        With .Range(.Cells(lngMasterbeginrow, lngMasterbegincol + 1), .Cells(lngEndrow, lngMasterbegincol + 1))
+            .Interior.ColorIndex = 15
+        End With
+        ' Developer
+        With .Range(.Cells(lngMasterbeginrow, lngMasterbegincol + 2), .Cells(lngEndrow, lngMasterbegincol + 2))
+            .Interior.ColorIndex = 15
+        End With
+        ' Star
+        With .Range(.Cells(lngMasterbeginrow, lngMasterbegincol + 3), .Cells(lngEndrow, lngMasterbegincol + 3))
+            .Interior.ColorIndex = 19
+        End With
+        With .Range(.Cells(lngMasterbeginrow, lngMasterbegincol), .Cells(lngEndrow, lngEndcol))
+            .Borders.LineStyle = True
+        End With
+    End With
+End Sub
+
+'********************************************************************************
+'* 処理名　｜btnExport_Click
+'* 機能　　｜エクスポートボタン
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Sub btnExport_Click()
+Application.EnableCancelKey = xlErrorHandler
+On Error GoTo ERROR_LABEL
+    Dim lngResult As Long
+    lngResult = 0
+
+    Dim arySetinfodata() As String
+    Dim strMainsheet As String
+    Dim aryMainrange() As String
+
+    ' 事前処理
+    Call mdlCommon.SubOnSpeedup(True)
+    Call mdlCommon.SubDisplayStatusbar(True)
+    Call mdlCommon.SubVisibleSheet(mdlCommon.HIDDEN_PARA, True)
+    Call mdlCommon.SubDisplayMessage(999)
+
+    ReDim aryMainrange(2)
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfodata(0)).Value
+        aryMainrange(0) = .Range(arySetinfodata(5)).Value
+        aryMainrange(1) = .Range(arySetinfodata(6)).Value
+        aryMainrange(2) = .Range(arySetinfodata(7)).Value
+    End With
+
+    ' 未入力チェック
+    With Worksheets(strMainsheet)
+        ' 作業者名
+        If mdlCommon.IsEmptyText(.Range(aryMainrange(0)).Value) Then
+            Call mdlCommon.SubSelectCell(strMainsheet, aryMainrange(0))
+            lngResult = -111
+        ' データ種別
+        ElseIf mdlCommon.IsEmptyText(.Range(aryMainrange(1)).Value) Then
+            Call mdlCommon.SubSelectCell(strMainsheet, aryMainrange(1))
+            lngResult = -111
+        ' 出力データ参照先
+        ElseIf mdlCommon.IsEmptyText(.Range(aryMainrange(2)).Value) Then
+            Call mdlCommon.SubSelectCell(strMainsheet, aryMainrange(2))
+            lngResult = -111
+        End If
+    End With
+
+    ' 存在チェック - 出力データ参照先
+    Dim aryPath() As String
+    If lngResult = 0 Then
+        With Worksheets(strMainsheet)
+            If Not (mdlCommon.IsExistsFolder( _
+                    mdlCommon.FuncExtractFolderpath( _
+                        .Range(aryMainrange(2)).Value))) Then
+                lngResult = -212
+            End If
+        End With
+    End If
+
+    ' 入力データの0件チェック
+    If lngResult = 0 Then
+        If Not (IsExistsImportdata) Then
+            lngResult = -311
+        End If
+    End If
+
+    ' マスターの未入力チェック
+    If lngResult = 0 Then
+        If IsEmptyMaster Then
+            lngResult = -411
+        End If
+    End If
+
+    ' 出力データ
+    If lngResult = 0 Then
+        ' 出力データの初期化
+        Call SubClearOutputsheet
+        ' 出力データの整形
+        Call SubToExcelsheet
+        ' Excelファイルの出力
+        Call SubExportExcelsheet
+    End If
+
+    ' 事後処理
+    Worksheets(strMainsheet).Select
+    
+    Call mdlCommon.SubVisibleSheet(mdlCommon.HIDDEN_PARA, False)
+    Call mdlCommon.SubDisplayStatusbar(False)
+    Call mdlCommon.SubOnSpeedup(False)
+    If lngResult = 0 Then
+        Call mdlCommon.SubDisplayMessage(lngResult)
+        Call mdlCommon.SubSelectCell(strMainsheet, "A1")
+    Else
+        Call mdlCommon.SubDisplayMessage(lngResult)
+        Call mdlCommon.SubWriteError(lngResult)
+        Call mdlCommon.SubShowMessagebox(lngResult)
+    End If
+    
+    Exit Sub
+    
+ERROR_LABEL:
+    ' 例外エラー
+    lngResult = -999
+    Select Case Err.Number
+        Case 18
+            lngResult = -901
+            If Not (mdlCommon.FuncShowBreakmessage) Then
+                lngResult = 0
+                Resume
+            End If
+    End Select
+
+    Call mdlCommon.SubVisibleSheet("HIDDEN", False)
+    Call mdlCommon.SubDisplayStatusbar(False)
+    Call mdlCommon.SubOnSpeedup(False)
+
+    Call mdlCommon.SubDisplayMessage(lngResult)
+    Call mdlCommon.SubWriteError(lngResult)
+    Call mdlCommon.SubShowMessagebox(lngResult)
+    
+    Exit Sub
+
+End Sub
+
+'********************************************************************************
+'* 処理名　｜IsEmptyMaster
+'* 機能　　｜マスターの未入力チェック
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Function IsEmptyMaster() As Boolean
+    Dim arySetinfodata() As String
+    Dim strMainsheet As String
+    Dim strMastersheet As String
+    Dim strMasterrange As String
+    Dim aryCheckcol() As String
+
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        ' マスター
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
+        strMastersheet = .Range(arySetinfodata(0)).Value
+        strMasterrange = .Range(arySetinfodata(1)).Value
+        ReDim aryCheckcol(0)
+        aryCheckcol(0) = "1"
+        If Not (mdlCommon.IsEmptyText(.Range(arySetinfodata(2)).Value)) Then
+            aryCheckcol = Split(.Range(arySetinfodata(2)).Value, ",")
+        End If
+    End With
+
+    ' 必須入力チェック
+    IsEmptyMaster = mdlCommon.IsEmptyTablerequired(strMastersheet, strMasterrange, aryCheckcol)
+
+End Function
+
+'********************************************************************************
+'* 処理名　｜SubClearOutputsheet
+'* 機能　　｜出力用のシートを初期化
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Sub SubClearOutputsheet()
+    Dim arySetinfodata() As String
+    Dim aryOutputsheet() As String
+    Dim strOutputrange As String
+    Dim lngCount As Long
+
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        ' 出力情報
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
+        If .Range(arySetinfodata(0)).Value <> "" Then
+            aryOutputsheet = Split(.Range(arySetinfodata(0)).Value, ",")
+        End If
+        strOutputrange = .Range(arySetinfodata(1)).Value
+    End With
+
+    For lngCount = 0 To UBound(aryOutputsheet)
+        Call mdlCommon.SubClearSheet(aryOutputsheet(lngCount), strOutputrange)
+    Next
+
+End Sub
+
+'********************************************************************************
+'* 処理名　｜SubToExcelsheet
+'* 機能　　｜データ整形
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Sub SubToExcelsheet()
+    Dim arySetinfodata() As String
+    Dim aryInputsheet() As String
+    Dim strInputrange As String
+    Dim aryOutputsheet() As String
+    Dim strOutputrange As String
+    Dim lngCount As Long
+
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        ' 入力情報
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.INPUT_PARA)
+        If .Range(arySetinfodata(3)).Value <> "" Then
+            aryInputsheet = Split(.Range(arySetinfodata(3)).Value, ",")
+        End If
+        strInputrange = .Range(arySetinfodata(4)).Value
+
+        ' 出力情報
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
+        If .Range(arySetinfodata(0)).Value <> "" Then
+            aryOutputsheet = Split(.Range(arySetinfodata(0)).Value, ",")
+        End If
+        strOutputrange = .Range(arySetinfodata(1)).Value
+    End With
+
+    For lngCount = 0 To UBound(aryInputsheet)
+        With Worksheets(aryInputsheet(lngCount))
+            If Not (mdlCommon.IsEmptyText(.Range(strInputrange).Value)) Then
+                Call SubToPs(aryInputsheet(lngCount), strInputrange, aryOutputsheet(lngCount), strOutputrange)
+            End If
+        End With
+    Next
+
+End Sub
+
+'********************************************************************************
+'* 処理名　｜SubToPs
+'* 機能　　｜データ整形
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜入力 対象シート：strInputsheet, 入力 セル開始位置：strInputrange
+'* 　　　　｜出力 対象シート：strOutputsheet, 出力 セル開始位置：strOutputrange
+'********************************************************************************
+Private Sub SubToPs(strInputsheet, strInputrange, strOutputsheet, strOutputrange)
+
+    Dim arySetinfodata() As String
+    Dim strMainsheet As String
+    Dim aryMainrange() As String
+
+    ReDim aryMainrange(2)
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        ' メイン
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+        strMainsheet = .Range(arySetinfodata(0)).Value
+        aryMainrange(0) = .Range(arySetinfodata(5)).Value
+        aryMainrange(1) = .Range(arySetinfodata(6)).Value
+        aryMainrange(2) = .Range(arySetinfodata(7)).Value
+    End With
+
+    Dim aryInputdata() As String
+    Dim aryOutputdata() As String
+    Dim rngTarget As Range
+    Dim lngInputrow As Long
+    Dim lngInputbeginrow As Long
+    Dim lngInputbegincol As Long
+    Dim lngOutputrow As Long
+    Dim lngOutputbeginrow As Long
+    Dim lngOutputbegincol As Long
+    Dim lngInputendrow As Long
+
+    Set rngTarget = Range(strInputrange)
+    lngInputbeginrow = rngTarget.Row
+    lngInputbegincol = rngTarget.Column
+
+    Set rngTarget = Range(strOutputrange)
+    lngOutputbeginrow = rngTarget.Row
+    lngOutputbegincol = rngTarget.Column
+
+    ReDim aryInputdata(1 To 6)
+    ReDim aryOutputdata(1 To 9)
+    With Worksheets(strInputsheet)
+        lngInputendrow = .Cells(Rows.Count, lngInputbegincol).End(xlUp).Row
+        With Worksheets(strOutputsheet)
+            lngOutputrow = .Cells(Rows.Count, lngOutputbegincol).End(xlUp).Row + 1
+        End With
+        For lngInputrow = lngInputbeginrow To lngInputendrow
+            ' 入力情報
+            aryInputdata(1) = .Cells(lngInputrow, lngInputbegincol).Value               ' DATAID
+            aryInputdata(2) = .Cells(lngInputrow, lngInputbegincol + 1).Value           ' MODEL
+            aryInputdata(3) = .Cells(lngInputrow, lngInputbegincol + 2).Value           ' NAME
+            aryInputdata(4) = .Cells(lngInputrow, lngInputbegincol + 3).Value           ' DISTRIBUTOR
+            aryInputdata(5) = .Cells(lngInputrow, lngInputbegincol + 4).Value           ' DEVELOPER
+            aryInputdata(6) = .Cells(lngInputrow, lngInputbegincol + 5).Value           ' RELEASE
+
+            ' 出力情報
+            aryOutputdata(1) = aryInputdata(1)                                          ' Data Id
+            aryOutputdata(2) = Worksheets(strMainsheet).Range(aryMainrange(0)).Value    ' Operator
+            aryOutputdata(3) = Worksheets(strMainsheet).Range(aryMainrange(1)).Value    ' Datatype
+            aryOutputdata(4) = aryInputdata(4)                                          ' Distributor
+            aryOutputdata(5) = aryInputdata(5)                                          ' Developer
+            aryOutputdata(6) = FuncRetrieveStar(aryInputdata(4), aryInputdata(5))       ' Star
+
+            If Not (mdlCommon.IsEmptyText(aryInputdata(5))) Then                        ' Comment
+                aryOutputdata(7) = aryInputdata(4) & " (" & aryInputdata(5) & ")"
+            Else
+                aryOutputdata(7) = aryInputdata(4)
+            End If
+            aryOutputdata(8) = aryInputdata(6)                                          ' Release data
+            aryOutputdata(9) = aryInputdata(3)                                          ' Name
+
+            With Worksheets(strOutputsheet)
+                .Cells(lngOutputrow, 1) = aryOutputdata(1)
+                .Cells(lngOutputrow, 2) = aryOutputdata(2)
+                .Cells(lngOutputrow, 3) = aryOutputdata(3)
+                .Cells(lngOutputrow, 4) = aryOutputdata(4)
+                .Cells(lngOutputrow, 5) = aryOutputdata(5)
+                .Cells(lngOutputrow, 6) = aryOutputdata(6)
+                .Cells(lngOutputrow, 7) = aryOutputdata(7)
+                .Cells(lngOutputrow, 8) = aryOutputdata(8)
+                .Cells(lngOutputrow, 9) = aryOutputdata(9)
+            End With
+            lngOutputrow = lngOutputrow + 1
+CONTINUE:
+        Next
+    End With
+End Sub
+
+'********************************************************************************
+'* 処理名　｜FuncRetrieveStar
+'* 機能　　｜スターを取得
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜String：取得した値
+'* 引数　　｜対象群番号：strDistributor, 対象性別：strDeveloper
+'********************************************************************************
+Private Function FuncRetrieveStar(strDistributor As String, strDeveloper As String) As String
+    Dim arySetinfodata() As String
+    Dim strMastersheet As String
+    Dim strMasterrange As String
+
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        ' マスター
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MASTER_PARA)
+        strMastersheet = .Range(arySetinfodata(0)).Value
+        strMasterrange = .Range(arySetinfodata(1)).Value
+    End With
+
+    Dim rngTarget As Range
+    Dim lngRow As Long
+    Dim lngBeginrow As Long
+    Dim lngBegincol As Long
+    Dim lngEndrow As Long
+
+    Set rngTarget = Range(strMasterrange)
+    lngBeginrow = rngTarget.Row
+    lngBegincol = rngTarget.Column
+
+    FuncRetrieveStar = ""
+
+    With Worksheets(strMastersheet)
+        lngEndrow = .Cells(Rows.Count, lngBegincol).End(xlUp).Row
+
+        For lngRow = lngBeginrow To lngEndrow
+            If .Cells(lngRow, lngBegincol + 1).Value = strDistributor And _
+               .Cells(lngRow, lngBegincol + 2).Value = strDeveloper Then
+                FuncRetrieveStar = .Cells(lngRow, lngBegincol + 3).Value    ' Star
+                Exit For
+            End If
+        Next
+    End With
+
+End Function
+
+'********************************************************************************
+'* 処理名　｜SubExportExcelsheet
+'* 機能　　｜データ整形
+'*-------------------------------------------------------------------------------
+'* 戻り値　｜-
+'* 引数　　｜-
+'********************************************************************************
+Private Sub SubExportExcelsheet()
+    Dim arySetinfodata() As String
+    Dim strMainsheet As String
+    Dim strRange As String
+    Dim aryOutputsheet() As String
+    Dim strOutputrange As String
+
+    arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.MAIN_PARA)
+    With Worksheets(mdlCommon.SETINFO_SHEETNAME)
+        ' メイン
+        strMainsheet = .Range(arySetinfodata(0)).Value
+        strRange = .Range(arySetinfodata(7)).Value
+
+        ' 出力情報
+        arySetinfodata = mdlCommon.FuncReadSetinfo(mdlCommon.OUTPUT_PARA)
+        If .Range(arySetinfodata(0)).Value <> "" Then
+            aryOutputsheet = Split(.Range(arySetinfodata(0)).Value, ",")
+        End If
+        strOutputrange = .Range(arySetinfodata(1)).Value
+    End With
+
+    Dim strPath As String
+    strPath = Worksheets(strMainsheet).Range(strRange).Value
+
+    Dim wbFmBook As Workbook
+    Dim wbToBook As Workbook
+    Dim wsToSheet As Worksheet
+    Dim lngCount As Long
+    Set wbFmBook = ThisWorkbook
+    Set wbToBook = Workbooks.Add
+
+    ' コピー処理
+    For lngCount = 0 To UBound(aryOutputsheet)
+        wbFmBook.Worksheets(aryOutputsheet(lngCount)).Copy before:=wbToBook.Sheets(wbToBook.Worksheets.Count)
+    Next
+
+    ' 不要なシート削除
+    For Each wsToSheet In wbToBook.Worksheets
+        If wsToSheet.Name = "Sheet1" Or _
+           wsToSheet.Name = "Sheet2" Or _
+           wsToSheet.Name = "Sheet3" Then
+            Application.DisplayAlerts = False
+            wsToSheet.Delete
+            Application.DisplayAlerts = True
+        End If
+    Next
+    wbToBook.Sheets(1).Select
+
+    ' 保存
+    Dim strMessage As String
+    If mdlCommon.IsExistsFile(strPath) Then
+        strMessage = strPath & " は既に存在します。" & vbCrLf & _
+                     "上書きしますか？"
+        If (MsgBox(strMessage, vbQuestion + vbYesNo, "確認") = vbYes) Then
+            Application.DisplayAlerts = False
+            wbToBook.SaveAs Filename:=strPath, FileFormat:=xlOpenXMLWorkbook
+            Application.DisplayAlerts = True
+        End If
+    Else
+        Application.DisplayAlerts = False
+        wbToBook.SaveAs Filename:=strPath, FileFormat:=xlOpenXMLWorkbook
+        Application.DisplayAlerts = True
+    End If
+    Application.DisplayAlerts = False
+    wbToBook.Close
+    Application.DisplayAlerts = True
+
+    wbFmBook.Activate
+
+End Sub
