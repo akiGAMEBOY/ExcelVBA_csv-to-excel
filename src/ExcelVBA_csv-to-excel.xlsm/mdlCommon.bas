@@ -53,7 +53,7 @@ Function IsNumericEx(strValue As String) As Boolean
     Dim objReg As New RegExp
 
     ' ŒŸõğŒF”¼Šp”’l‚Ì‚İ
-    objReg.Pattern = "[+-]?(?:\d+\.?\d*|\.\d+)"
+    objReg.Pattern = "^[+,-]?([1-9]\d*|0)(\.\d+)?$"
     objReg.Global = True
 
     IsNumericEx = objReg.Test(strValue)
