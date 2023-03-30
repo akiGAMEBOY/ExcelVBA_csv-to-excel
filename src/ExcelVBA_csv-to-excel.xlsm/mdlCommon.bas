@@ -34,7 +34,7 @@ Public Const TEXT_FILETYPE As String = "テキストファイル,*.txt"
 '* 処理名　｜IsEmptyText
 '* 機能　　｜空文字チェック
 '*-------------------------------------------------------------------------------
-'* 戻り値　｜Boolean（True=値あり, False=値なし）
+'* 戻り値　｜Boolean（True=値なし, False=値あり）
 '* 引数　　｜strValue：対象文字列
 '********************************************************************************
 Function IsEmptyText(strValue As String) As Boolean
